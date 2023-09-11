@@ -188,18 +188,18 @@ start_haproxy() {
 		    timeout check           10s
 
 		frontend main
-		$(for I in $(seq ${NUM_HTTPC_INSTANCES}); do echo "
+		    $(for I in $(seq ${NUM_HTTPC_INSTANCES}); do echo "
 		    bind 10.222.${I}.1:8080
 		    bind 10.222.${I}.1:4443 ssl crt $(pwd)/testing.pem
 		    ";
-	    	done)
+		    done)
 		    default_backend             app
 
 		backend app
 		    balance     roundrobin
-		$(for I in $(seq ${NUM_HTTPD_INSTANCES}); do echo "
+		    $(for I in $(seq ${NUM_HTTPD_INSTANCES}); do echo "
 		    server  app${I} 10.111.${I}.2:8080";
-		done)
+		    done)
 	HERE
 
 	status "Starting HAProxy"
