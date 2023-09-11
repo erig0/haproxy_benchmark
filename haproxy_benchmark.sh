@@ -39,7 +39,7 @@ set -e
 # They may be changed independently.
 #
 # general
-USE_QATENGINE=1
+USE_QATENGINE=
 USE_CPU_PINNING=
 NUM_RUNS=10 # to produce mean and stddev
 DURATION=60
