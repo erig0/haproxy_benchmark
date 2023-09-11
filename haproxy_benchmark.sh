@@ -268,20 +268,19 @@ setup() {
 
 	start_httpd
 	start_haproxy
-	sleep 3 # to allow listen() etc. to complete
 }
 
 sanity_check() {
 	status "Sanity checking test setup"
 	# httpd instances
 	for I in $(seq ${NUM_HTTPD_INSTANCES}); do
-		ip netns exec haproxy curl "http://10.111.${I}.2:8080/index.html" 2>&1 |grep "Hello World" >/dev/null
+		ip netns exec haproxy curl --retry 3 "http://10.111.${I}.2:8080/index.html" 2>&1 |grep "Hello World" >/dev/null
 	done
 
 	# haproxy
 	for I in $(seq ${NUM_HTTPC_INSTANCES}); do
-		ip netns exec client${I} curl "http://10.222.${I}.1:8080/index.html" 2>&1 |grep "Hello World" >/dev/null
-		ip netns exec client${I} curl --insecure --$(echo "${TLS_VERSION}" |tr 'TLS' 'tls') "https://10.222.${I}.1:4443/index.html" 2>&1 |grep "Hello World" >/dev/null
+		ip netns exec client${I} curl --retry 3 "http://10.222.${I}.1:8080/index.html" 2>&1 |grep "Hello World" >/dev/null
+		ip netns exec client${I} curl --retry 3 --insecure --$(echo "${TLS_VERSION}" |tr 'TLS' 'tls') "https://10.222.${I}.1:4443/index.html" 2>&1 |grep "Hello World" >/dev/null
 	done
 }
 
