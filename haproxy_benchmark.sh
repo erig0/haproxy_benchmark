@@ -208,6 +208,12 @@ start_haproxy() {
 	else
 		ip netns exec haproxy haproxy -f ./haproxy.cfg
 	fi
+
+	# give qatengine time to start
+	if test -n "${USE_QATENGINE}"; then
+		status "Allowing qatengine time to start (30s)"
+		sleep 30
+	fi
 }
 
 benchmark_haproxy_ab() {
