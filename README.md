@@ -1,7 +1,7 @@
 # haproxy_benchmark
 
 This script is used to benchmark HAProxy on a single node. It will
-stress HAPorxy TLS termination by default.
+stress HAProxy TLS termination by default.
 
 ## Requirements
 
