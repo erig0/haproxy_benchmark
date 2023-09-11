@@ -44,7 +44,7 @@ NUM_RUNS=10 # to produce mean and stddev
 DURATION=60
 # XXX: TLSv1.3 requires ApacheBench from httpd 2.5.0 or later, as of 2023-08-25 that's "trunk"
 TLS_VERSION="TLSv1.2" # TLSv1.2 or TLSv1.3
-#TLS_CIPHER="ECDHE-RSA-AES128-GCM-SHA256" # empty means use default
+TLS_CIPHER="ECDHE-RSA-AES256-GCM-SHA384" # empty means use default
 # scale http and haproxy
 NUM_HTTPD_INSTANCES=8
 NUM_HTTPC_INSTANCES=16
