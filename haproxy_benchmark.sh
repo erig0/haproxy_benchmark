@@ -40,6 +40,7 @@ set -e
 #
 # general
 USE_QATENGINE=1
+USE_CPU_PINNING=
 NUM_RUNS=10 # to produce mean and stddev
 DURATION=60
 # XXX: TLSv1.3 requires ApacheBench from httpd 2.5.0 or later, as of 2023-08-25 that's "trunk"
@@ -155,7 +156,11 @@ start_httpd() {
 			PidFile httpd-app-${I}.pid
 		HERE
 
-		ip netns exec app${I} httpd -d $(pwd) -f httpd-app-${I}.conf &
+		CMD="ip netns exec app${I} "
+		if test -n "${USE_CPU_PINNING}"; then
+			CMD="${CMD} taskset -c $(expr ${NUM_HAPROXY_THREADS} + ${I})"
+		fi
+		${CMD} httpd -d $(pwd) -f httpd-app-${I}.conf &
 	done
 }
 
@@ -175,6 +180,9 @@ start_haproxy() {
 		    ssl-default-bind-ciphers ${TLS_CIPHER}
 		    "; })
 		    nbthread ${NUM_HAPROXY_THREADS}
+		    $(test -n "${USE_CPU_PINNING}" && echo "
+		    cpu-map auto:1/1-${NUM_HAPROXY_THREADS} 1-${NUM_HAPROXY_THREADS}
+		    ")
 		    maxconn 2000000
 
 		defaults
@@ -203,11 +211,7 @@ start_haproxy() {
 	HERE
 
 	status "Starting HAProxy"
-	if test ${NUM_HAPROXY_THREADS} -eq 1; then
-		ip netns exec haproxy taskset -c 2 haproxy -f ./haproxy.cfg
-	else
-		ip netns exec haproxy haproxy -f ./haproxy.cfg
-	fi
+	ip netns exec haproxy haproxy -f ./haproxy.cfg
 
 	# give qatengine time to start
 	if test -n "${USE_QATENGINE}"; then
@@ -222,8 +226,12 @@ benchmark_haproxy_ab() {
 		status "Running benchmark, run ${run} of ${NUM_RUNS}"
 		PIDS=""
 		for I in $(seq ${NUM_HTTPC_INSTANCES}); do
-			#ip netns exec client${I} ab -c ${CLIENT_REQS_PER_SEC} -n $(expr ${CLIENT_REQS_PER_SEC} \* $(expr ${DURATION} + 10)) -t ${DURATION} "http://10.222.${I}.1:8080/index.html" > ab-${I}.txt 2>&1 &
-			ip netns exec client${I} ab -f $(echo ${TLS_VERSION} |tr -d 'v') -E $(pwd)/testing.pem -c ${CLIENT_REQS_PER_SEC} -n $(expr ${CLIENT_REQS_PER_SEC} \* $(expr ${DURATION} + 10)) -t ${DURATION} "https://10.222.${I}.1:4443/index.html" > ab-${I}.txt 2>&1 &
+			CMD="ip netns exec client${I}"
+			if test -n "${USE_CPU_PINNING}"; then
+				CMD="${CMD} taskset -c $(expr ${NUM_HAPROXY_THREADS} + ${NUM_HTTPD_INSTANCES} + ${I})"
+			fi
+			#${CMD} ab -c ${CLIENT_REQS_PER_SEC} -n $(expr ${CLIENT_REQS_PER_SEC} \* $(expr ${DURATION} + 10)) -t ${DURATION} "http://10.222.${I}.1:8080/index.html" > ab-${I}.txt 2>&1 &
+			${CMD} ab -f $(echo ${TLS_VERSION} |tr -d 'v') -E $(pwd)/testing.pem -c ${CLIENT_REQS_PER_SEC} -n $(expr ${CLIENT_REQS_PER_SEC} \* $(expr ${DURATION} + 10)) -t ${DURATION} "https://10.222.${I}.1:4443/index.html" > ab-${I}.txt 2>&1 &
 			PIDS="${PIDS} $!"
 		done
 		wait ${PIDS}
@@ -282,6 +290,12 @@ sanity_check() {
 		ip netns exec client${I} curl --retry 3 "http://10.222.${I}.1:8080/index.html" 2>&1 |grep "Hello World" >/dev/null
 		ip netns exec client${I} curl --retry 3 --insecure --$(echo "${TLS_VERSION}" |tr 'TLS' 'tls') "https://10.222.${I}.1:4443/index.html" 2>&1 |grep "Hello World" >/dev/null
 	done
+
+	if test -n "${USE_CPU_PINNING}" && test $(nproc) -lt $(expr ${NUM_HAPROXY_THREADS} + ${NUM_HTTPD_INSTANCES} + ${NUM_HTTPC_INSTANCES}); then
+		printf "Cannot use CPU pinning because there are not enough CPU."
+		printf "Need %d for haproxy, %d for httpd, %d https clients." ${NUM_HAPROXY_THREADS} ${NUM_HTTPD_INSTANCES} ${NUM_HTTPC_INSTANCES}
+		exit 1
+	fi
 }
 
 show_results() {
@@ -291,6 +305,12 @@ show_results() {
 	printf "${NUM_HTTPD_INSTANCES} servers, ${NUM_HTTPC_INSTANCES} clients at ${CLIENT_REQS_PER_SEC} requests per second\n"
 	if test -n "${NETWORK_LATENCY}"; then
 		printf "simulated network latency ${NETWORK_LATENCY}ms, jitter ${NETWORK_JITTER}ms, loss ${NETWORK_LOSS_PERCENT}%%\n"
+	fi
+	if test -n "${USE_CPU_PINNING}"; then
+		printf "CPU pinning is enabled.\n"
+		printf "HAProxy using CPUs: 1-${NUM_HAPROXY_THREADS}\n"
+		printf "httpd using CPUs: $(expr ${NUM_HAPROXY_THREADS} + 1)-$(expr ${NUM_HAPROXY_THREADS} + ${NUM_HTTPD_INSTANCES})\n"
+		printf "https clients using CPUs: $(expr ${NUM_HAPROXY_THREADS} + ${NUM_HTTPD_INSTANCES} + 1)-$(expr ${NUM_HAPROXY_THREADS} + ${NUM_HTTPD_INSTANCES} + ${NUM_HTTPC_INSTANCES})\n"
 	fi
 	printf "\n"
 	printf "Requests Per Second (mean): %s\n" $(cat ./mean)
