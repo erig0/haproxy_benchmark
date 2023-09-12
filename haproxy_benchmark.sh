@@ -130,8 +130,8 @@ create_topology() {
 
 		# simulate a real network
 		if test -n "${NETWORK_LATENCY}"; then
-			ip netns exec client${I} tc qdisc add dev client${I} root netem limit ${NETWORK_QUEUE_LIMIT} delay ${NETWORK_LATENCY}ms ${NETWORK_JITTER}ms loss random ${NETWORK_LOSS_PERCENT}
-			ip netns exec haproxy tc qdisc add dev client${I}-ha root netem limit ${NETWORK_QUEUE_LIMIT} delay ${NETWORK_LATENCY}ms ${NETWORK_JITTER}ms loss random ${NETWORK_LOSS_PERCENT}
+			ip netns exec client${I} tc qdisc add dev client${I} root netem limit ${NETWORK_QUEUE_LIMIT} delay $(expr ${NETWORK_LATENCY} / 2)ms $(expr ${NETWORK_JITTER} / 2)ms loss random ${NETWORK_LOSS_PERCENT}
+			ip netns exec haproxy tc qdisc add dev client${I}-ha root netem limit ${NETWORK_QUEUE_LIMIT} delay $(expr ${NETWORK_LATENCY} / 2)ms $(expr ${NETWORK_JITTER} / 2)ms loss random ${NETWORK_LOSS_PERCENT}
 		fi
 	done
 }
