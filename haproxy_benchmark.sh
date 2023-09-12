@@ -50,7 +50,7 @@ TLS_CIPHER="ECDHE-RSA-AES256-GCM-SHA384" # empty means use default
 NUM_HTTPD_INSTANCES=8
 NUM_HTTPC_INSTANCES=16
 CLIENT_REQS_PER_SEC=1024
-NUM_HAPROXY_THREADS=1
+NUM_HAPROXY_THREADS=4
 # simulated network latency/jitter/loss
 NETWORK_LATENCY=50 # empty disables all network simulation
 NETWORK_JITTER=$(expr ${NETWORK_LATENCY} / 10)
