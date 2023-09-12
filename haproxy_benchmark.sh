@@ -40,7 +40,7 @@ set -e
 #
 # general
 USE_QATENGINE=
-USE_CPU_PINNING=
+USE_CPU_PINNING=1
 NUM_RUNS=10 # to produce mean and stddev
 DURATION=60
 # XXX: TLSv1.3 requires ApacheBench from httpd 2.5.0 or later, as of 2023-08-25 that's "trunk"
