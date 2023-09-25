@@ -53,7 +53,7 @@ CLIENT_REQS_PER_SEC=1024
 NUM_HAPROXY_THREADS=4
 # simulated network latency/jitter/loss
 NETWORK_LATENCY=50 # empty disables all network simulation
-NETWORK_JITTER=$(expr ${NETWORK_LATENCY} / 10)
+NETWORK_JITTER=4
 NETWORK_QUEUE_LIMIT=$(expr ${CLIENT_REQS_PER_SEC} \* 2)
 NETWORK_LOSS_PERCENT=0.1
 
