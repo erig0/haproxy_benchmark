@@ -55,7 +55,7 @@ NUM_HAPROXY_THREADS=4
 NETWORK_LATENCY=50 # empty disables all network simulation
 NETWORK_JITTER=$(expr ${NETWORK_LATENCY} / 10)
 NETWORK_QUEUE_LIMIT=$(expr ${CLIENT_REQS_PER_SEC} \* 2)
-NETWORK_LOSS_PERCENT=1
+NETWORK_LOSS_PERCENT=0.1
 
 status() {
 	echo ">>> $@"
