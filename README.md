@@ -28,11 +28,11 @@ stddev: 226.69
 
 ## Tunables
 
-There are some variable defined in the script that may change the test
+There are some variables defined in `common.sh` that may change the test
 behavior.
 
 e.g.
 
 - `USE_QATENGINE`
 - `NETWORK_LATENCY`
-- `NUM_HAPROXY_THREADS`
+- `NUM_PROXY_THREADS`
