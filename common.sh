@@ -78,6 +78,7 @@ install_dependencies() {
 
 set_system_limits() {
 	ulimit -n 999999999
+	ulimit -l unlimited
 }
 
 cleanup() {
