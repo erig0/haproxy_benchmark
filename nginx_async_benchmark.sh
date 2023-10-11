@@ -10,6 +10,8 @@ install_nginx_async() {
 	command -v nginx >/dev/null 2>&1 && return
 
 	status "building and installing nginx-async"
+	rpm -q -i gcc >/dev/null || dnf -y install gcc
+	rpm -q -i openssl-devel >/dev/null || dnf -y install openssl-devel
 	rpm -q -i zlib-devel >/dev/null || dnf -y install zlib-devel
 	wget https://github.com/intel/asynch_mode_nginx/archive/refs/tags/v0.5.1.tar.gz
 	tar xf v0.5.1.tar.gz
